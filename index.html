@@ -231,16 +231,6 @@
 
 <!-- BOTTOM GRID -->
 <div class="grid-bottom">
-  <div>
-    <div class="alert-panel" id="alert-panel" style="margin-bottom:10px;">
-      <div class="panel-title">· Alertas activas</div>
-      <div id="alert-list"><div class="no-alert">Esperando datos...</div></div>
-    </div>
-    <div class="panel">
-      <div class="panel-title">· Sugerencias</div>
-      <div id="suggest-list"><div class="suggest-item"><span class="suggest-arrow">→</span>Cargando...</div></div>
-    </div>
-  </div>
 
   <div class="panel">
     <div class="panel-title">· Movimiento BTC</div>
@@ -273,17 +263,9 @@
   </div>
 </div>
 
-<!-- TELEGRAM PREVIEW -->
-<div class="panel" style="margin-bottom:14px;">
-  <div class="panel-title">· Preview alerta Telegram</div>
-  <div class="tg-box" id="tg-preview">Cargando...</div>
+  
 </div>
 
-<div class="action-buttons">
-  <button class="action-btn btn-mantener">Mantener Actual</button>
-  <button class="action-btn btn-cerrar">Cerrar Contrato</button>
-  <button class="action-btn btn-abrir">Abrir Trimestral</button>
-</div>
 
 <script>
 let cfg = { perp:"BTCUSDT", q1:"BTCUSDT_260327", q2:"BTCUSDT_260626" };
@@ -402,19 +384,6 @@ function render(d){
   el("bar-24h").style.width=Math.min(100,Math.abs(c24)*4)+"%";
   el("bar-24h").style.background=c24>=0?"var(--green)":"var(--red)";
 
-  // ALERTAS
-  const lbls={SPREAD_LOW:"Spread Q1-Q2 < 1.20%",EXTREME_MOVE_1H:"Movimiento extremo H1",EXTREME_MOVE_24H:"Movimiento extremo 24H"};
-  const ap=el("alert-panel");
-  if(!isAlert){
-    ap.className="alert-panel";
-    el("alert-list").innerHTML=`<div class="no-alert">✓ Sin alertas activas</div>`;
-    el("suggest-list").innerHTML=`<div class="suggest-item"><span class="suggest-arrow">→</span>Mantener contrato actual</div><div class="suggest-item"><span class="suggest-arrow">→</span>Monitorear spread diariamente</div>`;
-  }else{
-    ap.className="alert-panel is-alert";
-    el("alert-list").innerHTML=status.alerts.map(a=>`<div class="alert-item"><div class="alert-dot"></div>${lbls[a]||a}</div>`).join("");
-    el("suggest-list").innerHTML=["Evaluar rotar Q1 → Q2","Revisar spread inmediatamente","Consultar condiciones de mercado"].map(s=>`<div class="suggest-item"><span class="suggest-arrow">→</span>${s}</div>`).join("");
-  }
-
   // SEMÁFORO
   el("sem-green").className="sem-light "+(isAlert?"off":"on-green");
   el("sem-red").className="sem-light "+(isAlert?"on-red":"off");
@@ -430,14 +399,7 @@ function render(d){
   el("r-upd").textContent=ts.toUTCString().slice(17,25)+" UTC";
   el("last-update").textContent="último update: "+ts.toUTCString().slice(17,25)+" UTC";
 
-  // TELEGRAM
-  const atx={SPREAD_LOW:"ALERTA – Spread Q1-Q2 menor a 1.2 %",EXTREME_MOVE_1H:"ALERTA – Movimiento extremo H1",EXTREME_MOVE_24H:"ALERTA – Movimiento extremo diario"};
-  const stLines=isAlert?status.alerts.map(a=>`🔴 ${atx[a]||a}`).join("\n"):"🟢 Operación saludable";
-  const sugLines=isAlert?"Evaluar rotar Q1 → Q2\nRevisar spread inmediatamente":"Mantener contrato actual";
-  el("tg-preview").innerHTML=
-    escH(`BTC ARBITRAGE\n\nPerpetual: ${fmt(prices.perpetual)}\nQ1 (${c.q1}): ${fmt(prices.quarterly1)}\nQ2 (${c.q2}): ${fmt(prices.quarterly2)}\n\nBasis Q1: ${fmtD(basis.q1.pct,3)} %\nBasis Q2: ${fmtD(basis.q2.pct,3)} %\nSpread Q1-Q2: ${fmtD(spread,3)} %\n\nFunding: ${fmtD(funding.rate,4)} %\nFunding diario: ${fmtD(funding.daily,4)} %\n\nRetorno estimado Q1: ${fmtD(basis.q1.pct+funding.daily,3)} %\nRetorno estimado Q2: ${fmtD(basis.q2.pct+funding.daily,3)} %\n\nCambio BTC H1: ${(c1>=0?"+":"")+fmtD(c1,2)} %\nCambio BTC 24h: ${(c24>=0?"+":"")+fmtD(c24,2)} %\n\nPróximo funding: ${funding.nextFunding}\nQ1 vence: ${expiry.q1.days??'—'} días\nQ2 vence: ${expiry.q2.days??'—'} días\n\nEstado:\n`)+
-    `<span class="${isAlert?"tg-alert":"tg-ok"}">${escH(stLines)}</span>`+
-    escH("\n\nSugerencia:\n")+`<span class="tg-suggest">${escH(sugLines)}</span>`;
+
 }
 
 fetchData();
