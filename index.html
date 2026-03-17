@@ -107,7 +107,7 @@
 <script>
   // Con Cloudflare Pages + Functions, el Worker está en la misma URL.
   // No necesitás cambiar nada acá — la ruta /api/data es relativa y funciona sola.
-  const WORKER_URL = "https://btc-arbitrage-api.agustincij.workers.dev";  // dejar vacío
+  const WORKER_URL = "https://btc-arbitrage-api.agustincij.workers.dev";
 </script>
 
 <header class="header">
@@ -127,7 +127,7 @@
   <span class="config-label">Perpetuo</span>
   <input class="config-input" id="cfg-perp"      value="BTCUSDT" />
   <span class="config-label">Quarterly</span>
-  <input class="config-input" id="cfg-quarterly" value="BTCUSDT_250627" />
+  <input class="config-input" id="cfg-quarterly" value="BTCUSDT_260327" />
   <button class="btn-apply" onclick="applyConfig()">Aplicar</button>
   <span class="config-label" id="last-update" style="margin-left:auto;">—</span>
 </div>
@@ -143,7 +143,7 @@
   <div class="top-card tc-purple">
     <div class="tc-label">Quarterly</div>
     <div class="tc-value val-purple" id="c-qtr">—</div>
-    <div class="tc-sub" id="c-qtr-sub">BTCUSDT_250627</div>
+    <div class="tc-sub" id="c-qtr-sub">BTCUSDT_260327</div>
   </div>
   <div class="top-card tc-orange" id="c-basis-card">
     <div class="tc-label">Basis %</div>
@@ -176,7 +176,7 @@
     <div class="panel-title">· Basis &amp; Funding</div>
     <div class="metric-row"><span class="metric-label">Basis USD</span><span class="metric-value val-orange" id="m-busd">—</span></div>
     <div class="metric-row"><span class="metric-label">Basis %</span><span class="metric-value val-orange" id="m-bpct">—</span></div>
-    <div class="metric-row"><span class="metric-label">Threshold alerta</span><span class="metric-value" style="color:var(--border2)">3.000%</span></div>
+    <div class="metric-row"><span class="metric-label">Threshold alerta</span><span class="metric-value" style="color:var(--border2)">1.200%</span></div>
     <div class="metric-row"><span class="metric-label">Funding actual</span><span class="metric-value val-green" id="m-fund">—</span></div>
     <div class="metric-row"><span class="metric-label">Funding diario</span><span class="metric-value val-green" id="m-fdaily">—</span></div>
     <div class="metric-row"><span class="metric-label">Retorno estimado</span><span class="metric-value val-teal" id="m-ret">—</span></div>
@@ -218,7 +218,7 @@
     </div>
     <div style="width:100%">
       <div class="risk-row"><span class="risk-lbl">Alertas activas</span><span style="font-family:var(--mono);font-size:12px;font-weight:600;" id="r-alerts">—</span></div>
-      <div class="risk-row"><span class="risk-lbl">Basis vs 3%</span><span style="font-family:var(--mono);font-size:12px;font-weight:600;" id="r-bvs">—</span></div>
+      <div class="risk-row"><span class="risk-lbl">Basis vs 1.2%</span><span style="font-family:var(--mono);font-size:12px;font-weight:600;" id="r-bvs">—</span></div>
       <div class="risk-row"><span class="risk-lbl">Último update</span><span style="font-family:var(--mono);font-size:11px;color:var(--text1);" id="r-upd">—</span></div>
     </div>
   </div>
@@ -235,7 +235,7 @@
 </div>
 
 <script>
-let cfg = { perp: "BTCUSDT", quarterly: "BTCUSDT_250627" };
+let cfg = { perp: "BTCUSDT", quarterly: "BTCUSDT_260327" };
 let countdown = 30;
 let cdTimer = null;
 const fmt  = n => Number(n).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0});
@@ -244,7 +244,7 @@ const fmtP = n => "$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,
 const el   = id => document.getElementById(id);
 const escH = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
-setInterval(()=>{ el("clock").textContent = new Date().toUTCString().slice(17,25)+" UTC"; },1000);
+setInterval(()=>{ el("clock").textContent = new Date().toLocaleTimeString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour12:false})+" ARG"; },1000);
 
 function startCountdown(){
   if(cdTimer) clearInterval(cdTimer);
@@ -258,7 +258,7 @@ function startCountdown(){
 
 function applyConfig(){
   cfg.perp      = el("cfg-perp").value.trim().toUpperCase()||"BTCUSDT";
-  cfg.quarterly = el("cfg-quarterly").value.trim().toUpperCase()||"BTCUSDT_250627";
+  cfg.quarterly = el("cfg-quarterly").value.trim().toUpperCase()||"BTCUSDT_260327";
   el("cfg-perp").value=cfg.perp; el("cfg-quarterly").value=cfg.quarterly;
   fetchData();
 }
@@ -323,7 +323,7 @@ function render(d){
   el("bar-24h").style.width=Math.min(100,Math.abs(c24)*4)+"%";
   el("bar-24h").style.background=c24>=0?"var(--green)":"var(--red)";
 
-  const lbls={BASIS_LOW:"Basis < 3.00%",EXTREME_MOVE_1H:"Movimiento extremo H1",EXTREME_MOVE_24H:"Movimiento extremo 24H"};
+  const lbls={BASIS_LOW:"Basis < 1.20%",EXTREME_MOVE_1H:"Movimiento extremo H1",EXTREME_MOVE_24H:"Movimiento extremo 24H"};
   const ap=el("alert-panel");
   if(!isAlert){
     ap.className="alert-panel";
@@ -342,14 +342,14 @@ function render(d){
 
   el("r-alerts").textContent=status.alerts.length;
   el("r-alerts").style.color=isAlert?"var(--red)":"var(--green)";
-  const diff=basis.pct-3;
-  el("r-bvs").textContent=(diff>=0?"+":"")+fmtD(diff,2)+"% vs 3%";
+  const diff=basis.pct-1.2;
+  el("r-bvs").textContent=(diff>=0?"+":"")+fmtD(diff,2)+"% vs 1.2%";
   el("r-bvs").style.color=diff>=0?"var(--green)":"var(--red)";
   const ts=new Date(timestamp);
   el("r-upd").textContent=ts.toUTCString().slice(17,25)+" UTC";
   el("last-update").textContent="último update: "+ts.toUTCString().slice(17,25)+" UTC";
 
-  const atx={BASIS_LOW:"ALERTA – Basis menor a 3 %",EXTREME_MOVE_1H:"ALERTA – Movimiento extremo H1",EXTREME_MOVE_24H:"ALERTA – Movimiento extremo diario"};
+  const atx={BASIS_LOW:"ALERTA – Basis menor a 1.2 %",EXTREME_MOVE_1H:"ALERTA – Movimiento extremo H1",EXTREME_MOVE_24H:"ALERTA – Movimiento extremo diario"};
   const stLines=isAlert?status.alerts.map(a=>`🔴 ${atx[a]||a}`).join("\n"):"🟢 Operación saludable";
   const sugLines=isAlert?"Cerrar contrato actual\nAbrir siguiente trimestral\nRevisar riesgo inmediatamente":"Mantener contrato actual";
   el("tg-preview").innerHTML=
