@@ -154,8 +154,13 @@
 
 <div class="status-bar" id="status-bar"></div>
 
-<!-- TOP CARDS: fila 1 (precios Q1 y Q2) -->
-<div class="top-cards" style="grid-template-columns:repeat(2,1fr);margin-bottom:9px;">
+<!-- TOP CARDS: fila 1 (Perpetual + Q1 + Q2) -->
+<div class="top-cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:9px;">
+  <div class="top-card tc-blue">
+    <div class="tc-label">Perpetual</div>
+    <div class="tc-value val-blue" id="c-perp">—</div>
+    <div class="tc-sub" id="c-perp-sub">BTCUSDT PERP</div>
+  </div>
   <div class="top-card tc-purple">
     <div class="tc-label">Q1 — 1er Quarterly</div>
     <div class="tc-value val-purple" id="c-q1">—</div>
@@ -195,24 +200,7 @@
   </div>
 </div>
 
-<!-- PRECIOS -->
-<div class="price-grid" style="grid-template-columns:1fr 1fr 1fr;">
-  <div class="price-card">
-    <div class="price-card-title">· Perpetual</div>
-    <div class="price-big val-blue" id="p-perp">—</div>
-    <div class="price-sub" id="p-perp-sub">BTCUSDT PERP</div>
-  </div>
-  <div class="price-card">
-    <div class="price-card-title">· 1er Quarterly (Q1)</div>
-    <div class="price-big val-purple" id="p-q1">—</div>
-    <div class="price-sub" id="p-q1-sub">— · — días</div>
-  </div>
-  <div class="price-card">
-    <div class="price-card-title">· 2do Quarterly (Q2)</div>
-    <div class="price-big val-purple2" id="p-q2">—</div>
-    <div class="price-sub" id="p-q2-sub">— · — días</div>
-  </div>
-</div>
+
 
 <!-- BASIS COMPARISON -->
 <div class="basis-grid">
@@ -346,7 +334,9 @@ function render(d){
   const spread  = basis.spread;
 
   // TOP CARDS
-  el("c-q1").textContent      = fmtP(prices.quarterly1);
+  el("c-perp").textContent     = fmtP(prices.perpetual);
+  el("c-perp-sub").textContent = c.perp+" PERP";
+  el("c-q1").textContent       = fmtP(prices.quarterly1);
   el("c-q1-sub").textContent  = c.q1;
   el("c-q2").textContent      = fmtP(prices.quarterly2);
   el("c-q2-sub").textContent  = c.q2;
