@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BTC Arbitrage Monitor</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+    :root {
+      --bg0:#0a0c10;--bg1:#0f1318;--bg2:#161c24;--bg3:#1e2630;
+      --border:#252d38;--border2:#2e3a48;
+      --text0:#e8edf3;--text1:#8fa3b8;--text2:#5a6a7a;
+      --blue:#3b9eff;--purple:#9b7ff0;--green:#2ecc71;
+      --red:#e74c3c;--orange:#f39c12;--teal:#1abc9c;
+      --mono:'JetBrains Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg0);color:var(--text0);font-family:var(--sans);min-height:100vh;padding:16px;}
+    .header{display:flex;align-items:center;justify-content:space-between;padding:0 4px 14px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+    .header-left{display:flex;align-items:center;gap:14px;}
+    .logo{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:3px;color:var(--blue);text-transform:uppercase;}
+    .badge{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;letter-spacing:1px;font-weight:600;}
+    .badge-long{background:rgba(46,204,113,.12);color:var(--green);border:1px solid rgba(46,204,113,.25);}
+    .badge-short{background:rgba(231,76,60,.12);color:var(--red);border:1px solid rgba(231,76,60,.25);}
+    .header-right{display:flex;align-items:center;gap:16px;}
+    .live{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);font-family:var(--mono);}
+    .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 2s infinite;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:.25;}}
+    .clock{font-family:var(--mono);font-size:11px;color:var(--text2);}
+    .config-bar{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+    .config-label{font-size:10px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;white-space:nowrap;font-family:var(--mono);}
+    .config-input{background:var(--bg1);border:1px solid var(--border2);border-radius:5px;color:var(--text0);font-family:var(--mono);font-size:12px;padding:5px 10px;width:190px;outline:none;}
+    .config-input:focus{border-color:var(--blue);}
+    .btn-apply{background:var(--blue);border:none;border-radius:5px;color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;padding:6px 16px;cursor:pointer;text-transform:uppercase;transition:opacity .15s;}
+    .btn-apply:hover{opacity:.85;}
+    .top-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
+    .top-card{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;transition:background .3s,border-color .3s;}
+    .top-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+    .tc-blue::after{background:var(--blue);}.tc-purple::after{background:var(--purple);}
+    .tc-orange::after{background:var(--orange);}.tc-teal::after{background:var(--teal);}
+    .tc-green::after{background:var(--green);}.tc-red::after{background:var(--red);}
+    .tc-label{font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;font-family:var(--mono);}
+    .tc-value{font-family:var(--mono);font-size:22px;font-weight:700;line-height:1;}
+    .tc-sub{font-size:10px;color:var(--text2);margin-top:5px;font-family:var(--mono);}
+    .val-blue{color:var(--blue);}.val-purple{color:var(--purple);}.val-orange{color:var(--orange);}
+    .val-teal{color:var(--teal);}.val-green{color:var(--green);}.val-red{color:var(--red);}
+    .grid-main{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+    .grid-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
+    .panel{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:16px;}
+    .panel-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+    .metric-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(37,45,56,.6);}
+    .metric-row:last-child{border-bottom:none;}
+    .metric-label{font-size:12px;color:var(--text1);}
+    .metric-value{font-family:var(--mono);font-size:13px;font-weight:600;}
+    .alert-panel{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:16px;transition:background .3s,border-color .3s;}
+    .alert-panel.is-alert{background:#130a0a;border-color:rgba(231,76,60,.3);}
+    .alert-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(231,76,60,.1);font-size:12px;color:var(--red);font-family:var(--mono);}
+    .alert-item:last-child{border-bottom:none;}
+    .alert-dot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;animation:blink 1.5s infinite;}
+    .no-alert{font-size:12px;color:var(--green);font-family:var(--mono);padding:6px 0;}
+    .suggest-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;color:var(--text1);border-bottom:1px solid rgba(37,45,56,.6);}
+    .suggest-item:last-child{border-bottom:none;}
+    .suggest-arrow{color:var(--orange);font-weight:700;font-family:var(--mono);}
+    .risk-panel{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;flex-direction:column;align-items:center;}
+    .semaphore{display:flex;flex-direction:column;align-items:center;gap:5px;margin:8px 0 14px;}
+    .sem-light{width:54px;height:54px;border-radius:50%;border:2px solid var(--border);transition:all .4s;}
+    .sem-light.on-green{background:var(--green);box-shadow:0 0 18px rgba(46,204,113,.5);border-color:var(--green);}
+    .sem-light.on-red{background:var(--red);box-shadow:0 0 18px rgba(231,76,60,.5);border-color:var(--red);animation:blink 1.5s infinite;}
+    .sem-light.off{background:var(--bg3);box-shadow:none;}
+    .sem-label{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:2px;margin-top:4px;}
+    .risk-row{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px solid var(--border);width:100%;}
+    .risk-row:last-child{border-bottom:none;}
+    .risk-lbl{color:var(--text2);}
+    .move-cards{display:flex;gap:10px;margin-top:10px;}
+    .move-card{flex:1;background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+    .move-period{font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;font-family:var(--mono);}
+    .move-val{font-family:var(--mono);font-size:24px;font-weight:700;}
+    .bar-wrap{height:3px;background:var(--bg3);border-radius:2px;margin-top:8px;}
+    .bar-fill{height:100%;border-radius:2px;transition:width .4s ease;}
+    .tg-box{background:var(--bg0);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:var(--mono);font-size:11px;line-height:1.85;color:var(--text1);white-space:pre;overflow-x:auto;}
+    .tg-alert{color:var(--red);font-weight:600;}
+    .tg-ok{color:var(--green);font-weight:600;}
+    .tg-suggest{color:var(--orange);}
+    .action-buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+    .action-btn{padding:13px;border-radius:8px;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid;transition:all .15s;}
+    .action-btn:hover{transform:translateY(-1px);filter:brightness(1.1);}
+    .action-btn:active{transform:scale(.98);}
+    .btn-mantener{background:rgba(46,204,113,.1);color:var(--green);border-color:var(--green);}
+    .btn-cerrar{background:rgba(90,106,122,.1);color:var(--text1);border-color:var(--border2);}
+    .btn-abrir{background:rgba(243,156,18,.1);color:var(--orange);border-color:var(--orange);}
+    .status-bar{font-family:var(--mono);font-size:10px;padding:6px 12px;border-radius:5px;margin-bottom:10px;display:none;}
+    .status-bar.error{background:rgba(231,76,60,.1);color:var(--red);border:1px solid rgba(231,76,60,.2);display:block;}
+    .status-bar.loading{background:rgba(59,158,255,.08);color:var(--blue);border:1px solid rgba(59,158,255,.15);display:block;}
+    @media(max-width:900px){
+      .top-cards{grid-template-columns:repeat(3,1fr);}
+      .grid-main,.grid-bottom,.action-buttons{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+  ⚙️  PASO 1: Reemplazá la URL de abajo con la URL real de tu Worker.
+      La URL la encontrás en Cloudflare → Workers → tu worker → Overview.
+      Ejemplo: https://btc-arbitrage.mi-usuario.workers.dev
+════════════════════════════════════════════════════════════════════════════ -->
+<script>
+  // Con Cloudflare Pages + Functions, el Worker está en la misma URL.
+  // No necesitás cambiar nada acá — la ruta /api/data es relativa y funciona sola.
+  const WORKER_URL = "";  // dejar vacío
+</script>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo">BTC · Arbitrage Monitor</div>
+    <span class="badge badge-long">LONG QUARTERLY</span>
+    <span class="badge badge-short">SHORT PERPETUAL</span>
+  </div>
+  <div class="header-right">
+    <div class="live"><div class="live-dot"></div>LIVE</div>
+    <div class="clock" id="clock">--:--:-- UTC</div>
+    <div class="clock" id="next-refresh">update: 30s</div>
+  </div>
+</header>
+
+<div class="config-bar">
+  <span class="config-label">Perpetuo</span>
+  <input class="config-input" id="cfg-perp"      value="BTCUSDT" />
+  <span class="config-label">Quarterly</span>
+  <input class="config-input" id="cfg-quarterly" value="BTCUSDT_250627" />
+  <button class="btn-apply" onclick="applyConfig()">Aplicar</button>
+  <span class="config-label" id="last-update" style="margin-left:auto;">—</span>
+</div>
+
+<div class="status-bar" id="status-bar"></div>
+
+<div class="top-cards">
+  <div class="top-card tc-blue">
+    <div class="tc-label">Perpetual</div>
+    <div class="tc-value val-blue" id="c-perp">—</div>
+    <div class="tc-sub" id="c-perp-sub">BTCUSDT PERP</div>
+  </div>
+  <div class="top-card tc-purple">
+    <div class="tc-label">Quarterly</div>
+    <div class="tc-value val-purple" id="c-qtr">—</div>
+    <div class="tc-sub" id="c-qtr-sub">BTCUSDT_250627</div>
+  </div>
+  <div class="top-card tc-orange" id="c-basis-card">
+    <div class="tc-label">Basis %</div>
+    <div class="tc-value val-orange" id="c-basis-pct">—</div>
+    <div class="tc-sub" id="c-basis-usd">— USD</div>
+  </div>
+  <div class="top-card tc-teal">
+    <div class="tc-label">Funding</div>
+    <div class="tc-value val-teal" id="c-funding">—</div>
+    <div class="tc-sub" id="c-funding-sub">Daily: —</div>
+  </div>
+  <div class="top-card tc-green" id="c-estado-card">
+    <div class="tc-label">Estado</div>
+    <div class="tc-value val-green" id="c-estado">—</div>
+    <div class="tc-sub" id="c-estado-sub">—</div>
+  </div>
+</div>
+
+<div class="grid-main">
+  <div class="panel">
+    <div class="panel-title">· Información del contrato</div>
+    <div class="metric-row"><span class="metric-label">Activo</span><span class="metric-value val-blue">BTC / USDT</span></div>
+    <div class="metric-row"><span class="metric-label">Contrato quarterly</span><span class="metric-value" id="m-sym">—</span></div>
+    <div class="metric-row"><span class="metric-label">Días al vencimiento</span><span class="metric-value val-orange" id="m-days">—</span></div>
+    <div class="metric-row"><span class="metric-label">Próximo funding</span><span class="metric-value val-blue" id="m-nfund">—</span></div>
+    <div class="metric-row"><span class="metric-label">Posición quarterly</span><span class="metric-value val-green">LONG ↑</span></div>
+    <div class="metric-row"><span class="metric-label">Posición perpetuo</span><span class="metric-value val-red">SHORT ↓</span></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">· Basis &amp; Funding</div>
+    <div class="metric-row"><span class="metric-label">Basis USD</span><span class="metric-value val-orange" id="m-busd">—</span></div>
+    <div class="metric-row"><span class="metric-label">Basis %</span><span class="metric-value val-orange" id="m-bpct">—</span></div>
+    <div class="metric-row"><span class="metric-label">Threshold alerta</span><span class="metric-value" style="color:var(--border2)">3.000%</span></div>
+    <div class="metric-row"><span class="metric-label">Funding actual</span><span class="metric-value val-green" id="m-fund">—</span></div>
+    <div class="metric-row"><span class="metric-label">Funding diario</span><span class="metric-value val-green" id="m-fdaily">—</span></div>
+    <div class="metric-row"><span class="metric-label">Retorno estimado</span><span class="metric-value val-teal" id="m-ret">—</span></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">· Movimiento BTC</div>
+    <div class="move-cards">
+      <div class="move-card">
+        <div class="move-period">1H CHANGE</div>
+        <div class="move-val" id="m-c1h">—</div>
+        <div class="bar-wrap"><div class="bar-fill" id="bar-1h"></div></div>
+      </div>
+      <div class="move-card">
+        <div class="move-period">24H CHANGE</div>
+        <div class="move-val" id="m-c24h">—</div>
+        <div class="bar-wrap"><div class="bar-fill" id="bar-24h"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-bottom">
+  <div>
+    <div class="alert-panel" id="alert-panel" style="margin-bottom:10px;">
+      <div class="panel-title">· Alertas activas</div>
+      <div id="alert-list"><div class="no-alert">Esperando datos...</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">· Sugerencias</div>
+      <div id="suggest-list"><div class="suggest-item"><span class="suggest-arrow">→</span>Cargando...</div></div>
+    </div>
+  </div>
+  <div class="risk-panel">
+    <div class="panel-title" style="align-self:flex-start;width:100%">· Risk Monitor</div>
+    <div class="semaphore">
+      <div class="sem-light off" id="sem-green"></div>
+      <div class="sem-light off" id="sem-red"></div>
+      <div class="sem-label" id="sem-label" style="color:var(--text2)">—</div>
+    </div>
+    <div style="width:100%">
+      <div class="risk-row"><span class="risk-lbl">Alertas activas</span><span style="font-family:var(--mono);font-size:12px;font-weight:600;" id="r-alerts">—</span></div>
+      <div class="risk-row"><span class="risk-lbl">Basis vs 3%</span><span style="font-family:var(--mono);font-size:12px;font-weight:600;" id="r-bvs">—</span></div>
+      <div class="risk-row"><span class="risk-lbl">Último update</span><span style="font-family:var(--mono);font-size:11px;color:var(--text1);" id="r-upd">—</span></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">· Preview alerta Telegram</div>
+    <div class="tg-box" id="tg-preview">Cargando...</div>
+  </div>
+</div>
+
+<div class="action-buttons">
+  <button class="action-btn btn-mantener">Mantener Actual</button>
+  <button class="action-btn btn-cerrar">Cerrar Contrato</button>
+  <button class="action-btn btn-abrir">Abrir Trimestral</button>
+</div>
+
+<script>
+let cfg = { perp: "BTCUSDT", quarterly: "BTCUSDT_250627" };
+let countdown = 30;
+let cdTimer = null;
+const fmt  = n => Number(n).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtD = (n,d=2) => Number(n).toFixed(d);
+const fmtP = n => "$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const el   = id => document.getElementById(id);
+const escH = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+setInterval(()=>{ el("clock").textContent = new Date().toUTCString().slice(17,25)+" UTC"; },1000);
+
+function startCountdown(){
+  if(cdTimer) clearInterval(cdTimer);
+  countdown=30;
+  cdTimer=setInterval(()=>{
+    countdown--;
+    el("next-refresh").textContent="update: "+countdown+"s";
+    if(countdown<=0) countdown=30;
+  },1000);
+}
+
+function applyConfig(){
+  cfg.perp      = el("cfg-perp").value.trim().toUpperCase()||"BTCUSDT";
+  cfg.quarterly = el("cfg-quarterly").value.trim().toUpperCase()||"BTCUSDT_250627";
+  el("cfg-perp").value=cfg.perp; el("cfg-quarterly").value=cfg.quarterly;
+  fetchData();
+}
+
+function showStatus(msg,type){ const b=el("status-bar"); b.className="status-bar "+type; b.textContent=msg; }
+function hideStatus(){ el("status-bar").className="status-bar"; }
+
+async function fetchData(){
+  showStatus("Actualizando datos desde Binance...","loading");
+  try{
+    const endpoint = WORKER_URL || "/api/data";
+    const res  = await fetch(`${endpoint}?perp=${cfg.perp}&quarterly=${cfg.quarterly}`);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const data = await res.json();
+    if(data.error) throw new Error(data.message);
+    hideStatus();
+    render(data);
+  }catch(err){
+    showStatus("Error: "+err.message+" — revisá WORKER_URL en el código","error");
+  }
+}
+
+function render(d){
+  const {prices,basis,funding,returns,market,expiry,status,config:c,timestamp}=d;
+  const isAlert=status.isAlert;
+
+  el("c-perp").textContent=fmtP(prices.perpetual); el("c-perp-sub").textContent=c.perp+" PERP";
+  el("c-qtr").textContent=fmtP(prices.quarterly);  el("c-qtr-sub").textContent=c.quarterly;
+  el("c-basis-pct").textContent=fmtD(basis.pct,2)+"%";
+  el("c-basis-usd").textContent=fmt(basis.usd)+" USD";
+  el("c-funding").textContent=fmtD(funding.rate,4)+"%";
+  el("c-funding-sub").textContent="Daily: "+fmtD(funding.daily,4)+"%";
+
+  const bc=el("c-basis-card");
+  bc.style.background=basis.pct<3?"rgba(231,76,60,.08)":"";
+  bc.style.borderColor=basis.pct<3?"rgba(231,76,60,.3)":"";
+
+  el("c-estado").textContent=isAlert?"ALERTA":"SALUDABLE";
+  el("c-estado").className="tc-value "+(isAlert?"val-red":"val-green");
+  el("c-estado-sub").textContent=isAlert?status.alerts.length+" alerta(s)":"Todo en orden";
+  const ec=el("c-estado-card");
+  ec.className="top-card "+(isAlert?"tc-red":"tc-green");
+  ec.style.background=isAlert?"rgba(231,76,60,.08)":"";
+  ec.style.borderColor=isAlert?"rgba(231,76,60,.3)":"";
+
+  el("m-sym").textContent=c.quarterly;
+  el("m-days").textContent=expiry.daysToExpiry!==null?expiry.daysToExpiry+" días":"—";
+  el("m-nfund").textContent=funding.nextFunding;
+  el("m-busd").textContent=fmt(basis.usd)+" USD";
+  el("m-bpct").textContent=fmtD(basis.pct,3)+"%";
+  el("m-fund").textContent=fmtD(funding.rate,4)+"%";
+  el("m-fdaily").textContent=fmtD(funding.daily,4)+"%";
+  el("m-ret").textContent=fmtD(returns.estimated,3)+"%";
+
+  const c1=market.change1h, c24=market.change24h;
+  el("m-c1h").textContent=(c1>=0?"+":"")+fmtD(c1,2)+"%";
+  el("m-c1h").className="move-val "+(c1>=0?"val-green":"val-red");
+  el("m-c24h").textContent=(c24>=0?"+":"")+fmtD(c24,2)+"%";
+  el("m-c24h").className="move-val "+(c24>=0?"val-green":"val-red");
+  el("bar-1h").style.width=Math.min(100,Math.abs(c1)*5)+"%";
+  el("bar-1h").style.background=c1>=0?"var(--green)":"var(--red)";
+  el("bar-24h").style.width=Math.min(100,Math.abs(c24)*4)+"%";
+  el("bar-24h").style.background=c24>=0?"var(--green)":"var(--red)";
+
+  const lbls={BASIS_LOW:"Basis < 3.00%",EXTREME_MOVE_1H:"Movimiento extremo H1",EXTREME_MOVE_24H:"Movimiento extremo 24H"};
+  const ap=el("alert-panel");
+  if(!isAlert){
+    ap.className="alert-panel";
+    el("alert-list").innerHTML=`<div class="no-alert">✓ Sin alertas activas</div>`;
+    el("suggest-list").innerHTML=`<div class="suggest-item"><span class="suggest-arrow">→</span>Mantener contrato actual</div><div class="suggest-item"><span class="suggest-arrow">→</span>Monitorear basis diariamente</div>`;
+  }else{
+    ap.className="alert-panel is-alert";
+    el("alert-list").innerHTML=status.alerts.map(a=>`<div class="alert-item"><div class="alert-dot"></div>${lbls[a]||a}</div>`).join("");
+    el("suggest-list").innerHTML=["Cerrar contrato actual","Abrir siguiente trimestral","Revisar riesgo inmediatamente"].map(s=>`<div class="suggest-item"><span class="suggest-arrow">→</span>${s}</div>`).join("");
+  }
+
+  el("sem-green").className="sem-light "+(isAlert?"off":"on-green");
+  el("sem-red").className="sem-light "+(isAlert?"on-red":"off");
+  el("sem-label").textContent=isAlert?"ALERTA":"SALUDABLE";
+  el("sem-label").style.color=isAlert?"var(--red)":"var(--green)";
+
+  el("r-alerts").textContent=status.alerts.length;
+  el("r-alerts").style.color=isAlert?"var(--red)":"var(--green)";
+  const diff=basis.pct-3;
+  el("r-bvs").textContent=(diff>=0?"+":"")+fmtD(diff,2)+"% vs 3%";
+  el("r-bvs").style.color=diff>=0?"var(--green)":"var(--red)";
+  const ts=new Date(timestamp);
+  el("r-upd").textContent=ts.toUTCString().slice(17,25)+" UTC";
+  el("last-update").textContent="último update: "+ts.toUTCString().slice(17,25)+" UTC";
+
+  const atx={BASIS_LOW:"ALERTA – Basis menor a 3 %",EXTREME_MOVE_1H:"ALERTA – Movimiento extremo H1",EXTREME_MOVE_24H:"ALERTA – Movimiento extremo diario"};
+  const stLines=isAlert?status.alerts.map(a=>`🔴 ${atx[a]||a}`).join("\n"):"🟢 Operación saludable";
+  const sugLines=isAlert?"Cerrar contrato actual\nAbrir siguiente trimestral\nRevisar riesgo inmediatamente":"Mantener contrato actual";
+  el("tg-preview").innerHTML=
+    escH(`BTC ARBITRAGE\n\nPerpetual: ${fmt(prices.perpetual)}\nQuarterly: ${fmt(prices.quarterly)}\n\nBasis: ${fmt(basis.usd)} USD\nBasis %: ${fmtD(basis.pct,2)} %\n\nFunding: ${fmtD(funding.rate,4)} %\nFunding diario: ${fmtD(funding.daily,4)} %\n\nRetorno estimado: ${fmtD(returns.estimated,3)} %\n\nCambio BTC H1: ${(c1>=0?"+":"")+fmtD(c1,2)} %\nCambio BTC 24h: ${(c24>=0?"+":"")+fmtD(c24,2)} %\n\nPróximo funding: ${funding.nextFunding}\nVencimiento quarterly: ${expiry.daysToExpiry??"—"} días\n\nEstado:\n`)+
+    `<span class="${isAlert?"tg-alert":"tg-ok"}">${escH(stLines)}</span>`+
+    escH("\n\nSugerencia:\n")+`<span class="tg-suggest">${escH(sugLines)}</span>`;
+}
+
+fetchData();
+startCountdown();
+setInterval(()=>{ fetchData(); startCountdown(); },30000);
+</script>
+</body>
+</html>
