@@ -196,7 +196,12 @@
 </div>
 
 <!-- PRECIOS -->
-<div class="price-grid" style="grid-template-columns:1fr 1fr;">
+<div class="price-grid" style="grid-template-columns:1fr 1fr 1fr;">
+  <div class="price-card">
+    <div class="price-card-title">· Perpetual</div>
+    <div class="price-big val-blue" id="p-perp">—</div>
+    <div class="price-sub" id="p-perp-sub">BTCUSDT PERP</div>
+  </div>
   <div class="price-card">
     <div class="price-card-title">· 1er Quarterly (Q1)</div>
     <div class="price-big val-purple" id="p-q1">—</div>
@@ -367,7 +372,9 @@ function render(d){
   ec.style.borderColor = isAlert?"rgba(231,76,60,.3)":"";
 
   // PRECIOS
-  el("p-q1").textContent      = fmtP(prices.quarterly1);
+  el("p-perp").textContent     = fmtP(prices.perpetual);
+  el("p-perp-sub").textContent = c.perp+" PERP";
+  el("p-q1").textContent       = fmtP(prices.quarterly1);
   el("p-q1-sub").textContent  = c.q1+" · "+(expiry.q1.days!==null?expiry.q1.days+" días":"—");
   el("p-q2").textContent      = fmtP(prices.quarterly2);
   el("p-q2-sub").textContent  = c.q2+" · "+(expiry.q2.days!==null?expiry.q2.days+" días":"—");
