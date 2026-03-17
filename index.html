@@ -154,8 +154,8 @@
 
 <div class="status-bar" id="status-bar"></div>
 
-<!-- TOP CARDS: 6 columnas -->
-<div class="top-cards">
+<!-- TOP CARDS: fila 1 (precios) + fila 2 (basis) -->
+<div class="top-cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:9px;">
   <div class="top-card tc-blue">
     <div class="tc-label">Perpetual</div>
     <div class="tc-value val-blue" id="c-perp">—</div>
@@ -171,8 +171,20 @@
     <div class="tc-value val-purple2" id="c-q2">—</div>
     <div class="tc-sub" id="c-q2-sub">BTCUSDT_260626</div>
   </div>
+</div>
+<div class="top-cards" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px;">
+  <div class="top-card tc-purple">
+    <div class="tc-label">Basis Q1 %</div>
+    <div class="tc-value val-purple" id="c-bq1">—</div>
+    <div class="tc-sub" id="c-bq1-usd">— USD</div>
+  </div>
+  <div class="top-card tc-purple2">
+    <div class="tc-label">Basis Q2 %</div>
+    <div class="tc-value val-purple2" id="c-bq2">—</div>
+    <div class="tc-sub" id="c-bq2-usd">— USD</div>
+  </div>
   <div class="top-card tc-orange" id="c-spread-card">
-    <div class="tc-label">Spread Q1-Q2</div>
+    <div class="tc-label">Spread Q1−Q2</div>
     <div class="tc-value val-orange" id="c-spread">—</div>
     <div class="tc-sub">Basis Q1% − Basis Q2%</div>
   </div>
@@ -345,6 +357,12 @@ function render(d){
   el("c-q1-sub").textContent  = c.q1;
   el("c-q2").textContent      = fmtP(prices.quarterly2);
   el("c-q2-sub").textContent  = c.q2;
+  el("c-bq1").textContent     = fmtD(basis.q1.pct,3)+"%";
+  el("c-bq1").className       = "tc-value val-purple";
+  el("c-bq1-usd").textContent = fmt(basis.q1.usd)+" USD";
+  el("c-bq2").textContent     = fmtD(basis.q2.pct,3)+"%";
+  el("c-bq2").className       = "tc-value val-purple2";
+  el("c-bq2-usd").textContent = fmt(basis.q2.usd)+" USD";
   el("c-spread").textContent  = fmtD(spread,3)+"%";
   el("c-spread").className    = "tc-value "+(spread<1.2?"val-red":"val-orange");
   const sc = el("c-spread-card");
